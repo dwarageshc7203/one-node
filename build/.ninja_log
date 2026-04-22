@@ -1,0 +1,9 @@
+# ninja log v5
+3	451	1776877812753444958	dropin_autogen/timestamp	5aa0069059df7be7
+3	451	1776877812753444958	dropin_autogen/mocs_compilation.cpp	5aa0069059df7be7
+3	451	1776877812753444958	/home/dwaragesh/Documents/Projects/One-Node/build/dropin_autogen/timestamp	5aa0069059df7be7
+3	451	1776877812753444958	/home/dwaragesh/Documents/Projects/One-Node/build/dropin_autogen/mocs_compilation.cpp	5aa0069059df7be7
+451	2411	1776877814728453648	CMakeFiles/dropin.dir/dropin_autogen/mocs_compilation.cpp.o	6c775f6a164094fc
+452	2449	1776877814767453818	CMakeFiles/dropin.dir/main.cpp.o	e4f6d052ab88089
+452	2514	1776877814833227723	CMakeFiles/dropin.dir/mainwindow.cpp.o	acc6b45bc61e0f2a
+2514	3004	1776877815318668080	dropin	eb1fa097bd7dff8b
