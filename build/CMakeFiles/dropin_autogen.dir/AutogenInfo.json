@@ -324,6 +324,12 @@
 			"Mu",
 			"EWIEGA46WW/moc_mainwindow.cpp",
 			null
+		],
+		[
+			"/home/dwaragesh/Documents/Projects/One-Node/pairingserver.h",
+			"Mu",
+			"EWIEGA46WW/moc_pairingserver.cpp",
+			null
 		]
 	],
 	"HEADER_EXTENSIONS" : [ "h", "hh", "h++", "hm", "hpp", "hxx", "in", "txx" ],
@@ -395,6 +401,11 @@
 		[ "/home/dwaragesh/Documents/Projects/One-Node/main.cpp", "Mu", null ],
 		[
 			"/home/dwaragesh/Documents/Projects/One-Node/mainwindow.cpp",
+			"Mu",
+			null
+		],
+		[
+			"/home/dwaragesh/Documents/Projects/One-Node/pairingserver.cpp",
 			"Mu",
 			null
 		]

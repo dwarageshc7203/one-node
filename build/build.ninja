@@ -74,6 +74,16 @@ build CMakeFiles/dropin.dir/mainwindow.cpp.o: CXX_COMPILER__dropin_unscanned_ /h
   TARGET_COMPILE_PDB = CMakeFiles/dropin.dir/
   TARGET_PDB = dropin.pdb
 
+build CMakeFiles/dropin.dir/pairingserver.cpp.o: CXX_COMPILER__dropin_unscanned_ /home/dwaragesh/Documents/Projects/One-Node/pairingserver.cpp || cmake_object_order_depends_target_dropin
+  DEFINES = -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB
+  DEP_FILE = CMakeFiles/dropin.dir/pairingserver.cpp.o.d
+  FLAGS = -std=gnu++17 -fPIC
+  INCLUDES = -I/home/dwaragesh/Documents/Projects/One-Node/build/dropin_autogen/include -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork
+  OBJECT_DIR = CMakeFiles/dropin.dir
+  OBJECT_FILE_DIR = CMakeFiles/dropin.dir
+  TARGET_COMPILE_PDB = CMakeFiles/dropin.dir/
+  TARGET_PDB = dropin.pdb
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target dropin
@@ -82,7 +92,7 @@ build CMakeFiles/dropin.dir/mainwindow.cpp.o: CXX_COMPILER__dropin_unscanned_ /h
 #############################################
 # Link the executable dropin
 
-build dropin: CXX_EXECUTABLE_LINKER__dropin_ CMakeFiles/dropin.dir/dropin_autogen/mocs_compilation.cpp.o CMakeFiles/dropin.dir/main.cpp.o CMakeFiles/dropin.dir/mainwindow.cpp.o | /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.4.2 /usr/lib/x86_64-linux-gnu/libQt6Network.so.6.4.2 /usr/lib/x86_64-linux-gnu/libQt6Gui.so.6.4.2 /usr/lib/x86_64-linux-gnu/libGLX.so /usr/lib/x86_64-linux-gnu/libOpenGL.so /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2 || dropin_autogen dropin_autogen_timestamp_deps
+build dropin: CXX_EXECUTABLE_LINKER__dropin_ CMakeFiles/dropin.dir/dropin_autogen/mocs_compilation.cpp.o CMakeFiles/dropin.dir/main.cpp.o CMakeFiles/dropin.dir/mainwindow.cpp.o CMakeFiles/dropin.dir/pairingserver.cpp.o | /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.4.2 /usr/lib/x86_64-linux-gnu/libQt6Network.so.6.4.2 /usr/lib/x86_64-linux-gnu/libQt6Gui.so.6.4.2 /usr/lib/x86_64-linux-gnu/libGLX.so /usr/lib/x86_64-linux-gnu/libOpenGL.so /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2 || dropin_autogen dropin_autogen_timestamp_deps
   LINK_LIBRARIES = /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.4.2  /usr/lib/x86_64-linux-gnu/libQt6Network.so.6.4.2  /usr/lib/x86_64-linux-gnu/libQt6Gui.so.6.4.2  /usr/lib/x86_64-linux-gnu/libGLX.so  /usr/lib/x86_64-linux-gnu/libOpenGL.so  /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2
   OBJECT_DIR = CMakeFiles/dropin.dir
   POST_BUILD = :
@@ -140,7 +150,7 @@ build dropin_autogen/timestamp dropin_autogen/mocs_compilation.cpp | ${cmake_nin
 #############################################
 # Phony custom command for CMakeFiles/dropin_autogen_timestamp_deps
 
-build CMakeFiles/dropin_autogen_timestamp_deps | ${cmake_ninja_workdir}CMakeFiles/dropin_autogen_timestamp_deps: phony /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.4.2 /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2 /usr/lib/qt6/libexec/moc /usr/lib/x86_64-linux-gnu/libQt6Network.so.6.4.2
+build CMakeFiles/dropin_autogen_timestamp_deps | ${cmake_ninja_workdir}CMakeFiles/dropin_autogen_timestamp_deps: phony /usr/lib/qt6/libexec/moc /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2 /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.4.2 /usr/lib/x86_64-linux-gnu/libQt6Network.so.6.4.2
 
 
 #############################################
