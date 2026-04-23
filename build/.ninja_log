@@ -1,0 +1,14 @@
+# ninja log v5
+1	297	1776949249259796684	dropin_autogen/timestamp	5aa0069059df7be7
+1	297	1776949249259796684	dropin_autogen/mocs_compilation.cpp	5aa0069059df7be7
+1	297	1776949249259796684	/home/dwaragesh/Documents/Projects/One-Node/build/dropin_autogen/timestamp	5aa0069059df7be7
+1	297	1776949249259796684	/home/dwaragesh/Documents/Projects/One-Node/build/dropin_autogen/mocs_compilation.cpp	5aa0069059df7be7
+297	311	1776949249281796283	dropin_autogen/EWIEGA46WW/qrc_resources.cpp	1c120bae119d76f9
+297	311	1776949249281796283	/home/dwaragesh/Documents/Projects/One-Node/build/dropin_autogen/EWIEGA46WW/qrc_resources.cpp	1c120bae119d76f9
+312	339	1776949249312243788	CMakeFiles/dropin.dir/dropin_autogen/EWIEGA46WW/qrc_resources.cpp.o	8010c6bb5decb177
+311	1216	1776949250188457395	CMakeFiles/dropin.dir/pairingserver.cpp.o	d56f6603034f8a1a
+312	1352	1776949250324120435	CMakeFiles/dropin.dir/filetransfer.cpp.o	b1d151280174f708
+311	1363	1776949250335531124	CMakeFiles/dropin.dir/dropin_autogen/mocs_compilation.cpp.o	6c775f6a164094fc
+311	1562	1776949250534547182	CMakeFiles/dropin.dir/mainwindow.cpp.o	acc6b45bc61e0f2a
+311	1590	1776949250563016191	CMakeFiles/dropin.dir/main.cpp.o	e4f6d052ab88089
+1591	1854	1776949250824754775	dropin	3d6dec87ba0f16c8

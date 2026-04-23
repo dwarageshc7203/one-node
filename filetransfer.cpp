@@ -27,47 +27,62 @@ void FileTransfer::sendFile(const QString &path, const QString &peerIp, int port
         return;
     }
     fileSize = f.size();
-
     socket->connectToHost(QHostAddress(peerIp), port);
 }
 
 void FileTransfer::onConnected() {
+    qDebug() << "Connected to peer, sending:" << fileName;
+    
     QFile f(filePath);
     if (!f.open(QIODevice::ReadOnly)) {
+        qDebug() << "Cannot open file!";
         emit transferFailed("Cannot open file: " + fileName);
         return;
     }
 
+    qDebug() << "File size:" << fileSize;
     emit transferStarted(fileName);
 
-    // Protocol:
-    // [4 bytes] filename length
-    // [N bytes] filename
-    // [8 bytes] file size
-    // [M bytes] file data
-
     QByteArray nameBytes = fileName.toUtf8();
-    int nameLen = nameBytes.size();
+    qint32 nameLen = (qint32)nameBytes.size();
+    qint64 fSize   = (qint64)fileSize;
 
     QByteArray header;
-    QDataStream ds(&header, QIODevice::WriteOnly);
-    ds.setByteOrder(QDataStream::BigEndian);
-    ds << (qint32)nameLen;
+    header.resize(4);
+    header[0] = (nameLen >> 24) & 0xFF;
+    header[1] = (nameLen >> 16) & 0xFF;
+    header[2] = (nameLen >>  8) & 0xFF;
+    header[3] = (nameLen      ) & 0xFF;
     header.append(nameBytes);
-    ds << (qint64)fileSize;
+
+    QByteArray sizeBytes(8, 0);
+    sizeBytes[0] = (fSize >> 56) & 0xFF;
+    sizeBytes[1] = (fSize >> 48) & 0xFF;
+    sizeBytes[2] = (fSize >> 40) & 0xFF;
+    sizeBytes[3] = (fSize >> 32) & 0xFF;
+    sizeBytes[4] = (fSize >> 24) & 0xFF;
+    sizeBytes[5] = (fSize >> 16) & 0xFF;
+    sizeBytes[6] = (fSize >>  8) & 0xFF;
+    sizeBytes[7] = (fSize      ) & 0xFF;
+    header.append(sizeBytes);
+
+    qDebug() << "Header size:" << header.size();
+    qDebug() << "Name length:" << nameLen;
 
     socket->write(header);
 
-    // Stream the file in chunks
     QByteArray buffer;
+    qint64 totalSent = 0;
     while (!f.atEnd()) {
-        buffer = f.read(65536); // 64 KB chunks
+        buffer = f.read(65536);
         socket->write(buffer);
+        totalSent += buffer.size();
+        qDebug() << "Sent chunk, total so far:" << totalSent;
     }
-
     f.close();
     socket->flush();
 
+    qDebug() << "Transfer complete, total sent:" << totalSent;
     emit transferDone(fileName);
     socket->disconnectFromHost();
 }
