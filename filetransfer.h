@@ -2,13 +2,14 @@
 #include <QObject>
 #include <QTcpSocket>
 #include <QString>
+#include <QQueue>
 
 class FileTransfer : public QObject {
     Q_OBJECT
 
 public:
     explicit FileTransfer(QObject *parent = nullptr);
-    void sendFile(const QString &filePath, const QString &peerIp, int port = 45679);
+    void sendFile(const QString &filePath, const QString &peerIp, int port = 45679, const QString &token = "");
 
 signals:
     void transferStarted(const QString &fileName);
@@ -20,9 +21,15 @@ private slots:
     void onConnected();
     void onBytesWritten(qint64 bytes);
     void onError(QAbstractSocket::SocketError error);
+    void processNext();
 
 private:
     QTcpSocket *socket;
+    QQueue<QString> fileQueue;
+    QString     peerIp;
+    int         peerPort;
+    QString     token;
+    
     QString     filePath;
     QString     fileName;
     qint64      fileSize;

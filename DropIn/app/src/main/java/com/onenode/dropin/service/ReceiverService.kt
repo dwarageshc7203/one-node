@@ -7,6 +7,10 @@ import android.content.Context
 import android.content.Intent
 import android.os.Environment
 import android.os.IBinder
+import android.app.PendingIntent
+import android.net.Uri
+import android.webkit.MimeTypeMap
+import androidx.core.content.FileProvider
 import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -84,6 +88,20 @@ class ReceiverService : Service() {
             socket.soTimeout = 30000 // 30 second timeout
             val input = DataInputStream(socket.getInputStream())
 
+            // Read token length (4 bytes)
+            val tokenLen = input.readInt()
+            val tokenBytes = ByteArray(tokenLen)
+            input.readFully(tokenBytes)
+            val receivedToken = String(tokenBytes)
+            
+            val prefs = getSharedPreferences("OneNodePrefs", Context.MODE_PRIVATE)
+            val expectedToken = prefs.getString("pairing_token", "")
+            
+            if (receivedToken != expectedToken) {
+                socket.close()
+                return
+            }
+
             // Read filename length (4 bytes)
             val nameLen = input.readInt()
 
@@ -105,6 +123,7 @@ class ReceiverService : Service() {
             val output = outFile.outputStream()
             val buffer = ByteArray(8192)
             var received = 0L
+            var lastPercent = 0
 
             while (received < fileSize) {
                 val toRead = minOf(buffer.size.toLong(), fileSize - received).toInt()
@@ -112,26 +131,59 @@ class ReceiverService : Service() {
                 if (read == -1) break
                 output.write(buffer, 0, read)
                 received += read
+                
+                val currentPercent = ((received * 100) / fileSize).toInt()
+                if (currentPercent > lastPercent) {
+                    lastPercent = currentPercent
+                    updateProgressNotification(fileName, currentPercent)
+                }
             }
 
             output.flush()
             output.close()
             socket.close()
 
-            notifyFileReceived(fileName)
+            showCompletionNotification(fileName, outFile)
 
         } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
-    private fun notifyFileReceived(fileName: String) {
+    private fun updateProgressNotification(fileName: String, percent: Int) {
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.stat_sys_download)
+            .setContentTitle("Receiving $fileName")
+            .setProgress(100, percent, false)
+            .setOngoing(true)
+            .build()
+        nm.notify(2, notification)
+    }
+
+    private fun showCompletionNotification(fileName: String, file: File) {
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        nm.cancel(2) // cancel progress
+        
+        val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+        val ext = file.extension
+        val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext) ?: "*/*"
+        
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, mimeType)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        
+        val pendingIntent = PendingIntent.getActivity(this, 0, intent, 
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
             .setContentTitle("One Node")
             .setContentText("File received: $fileName")
             .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
             .build()
         nm.notify(System.currentTimeMillis().toInt(), notification)
     }

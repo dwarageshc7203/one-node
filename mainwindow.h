@@ -7,6 +7,7 @@
 #include <QPushButton>
 #include <QTimer>
 #include <QSettings>
+#include <QProgressBar>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QDragEnterEvent>
@@ -42,6 +43,8 @@ private slots:
 
 private:
     struct IncomingTransferState {
+        qint32 tokenLength = -1;
+        QString token;
         qint32 nameLength = -1;
         QString fileName;
         qint64 fileSize = -1;
@@ -73,6 +76,7 @@ private:
     QLabel      *timerLabel;
     QLabel      *linkedLabel;
     QPushButton *regenerateBtn;
+    QProgressBar *progressBar;
 
     QSettings      *settings;
     QTimer         *countdownTimer;

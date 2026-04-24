@@ -57,6 +57,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
             this, &MainWindow::onTransferDone);
     connect(fileTransfer, &FileTransfer::transferFailed,
             this, &MainWindow::onTransferFailed);
+    connect(fileTransfer, &FileTransfer::transferStarted,
+            this, [this](const QString &fileName) {
+                progressBar->setValue(0);
+                progressBar->show();
+            });
+    connect(fileTransfer, &FileTransfer::transferProgress,
+            this, [this](int percent) {
+                progressBar->setValue(percent);
+            });
     connect(heartbeatTimer, &QTimer::timeout,
             this, &MainWindow::sendHeartbeatPing);
     heartbeatTimer->setInterval(3000);
@@ -67,8 +76,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     mdnsAdvertiser->start();
     setAcceptDrops(true);
 
-    // Always fresh code on every launch
-    onRegenerateClicked();
+    if (settings->contains("device_ip") && settings->contains("pairing_token")) {
+        showLinkedState(settings->value("device_name").toString());
+    } else {
+        onRegenerateClicked();
+    }
 }
 
 // ── Drag and drop ──────────────────────────────────────────────────────────
@@ -93,11 +105,12 @@ void MainWindow::dropEvent(QDropEvent *event) {
     }
 
     const auto urls = event->mimeData()->urls();
+    QString token = settings->value("pairing_token").toString();
     for (const QUrl &url : urls) {
         QString filePath = url.toLocalFile();
         if (!filePath.isEmpty()) {
             statusLabel->setText("📤  Sending " + QFileInfo(filePath).fileName());
-            fileTransfer->sendFile(filePath, peerIp, 45679);
+            fileTransfer->sendFile(filePath, peerIp, 45679, token);
         }
     }
 }
@@ -114,7 +127,8 @@ void MainWindow::sendFilePath(const QString &filePath) {
     trayIcon->showMessage("One Node",
         "Sending: " + QFileInfo(filePath).fileName(),
         QSystemTrayIcon::Information, 2000);
-    fileTransfer->sendFile(filePath, peerIp, 45679);
+    QString token = settings->value("pairing_token").toString();
+    fileTransfer->sendFile(filePath, peerIp, 45679, token);
 }
 
 // ── Pairing ────────────────────────────────────────────────────────────────
@@ -202,12 +216,14 @@ void MainWindow::onTransferDone(const QString &fileName) {
     statusLabel->setText("✅  Sent: " + fileName);
     trayIcon->showMessage("One Node", "Sent: " + fileName,
                           QSystemTrayIcon::Information, 3000);
+    progressBar->hide();
 }
 
 void MainWindow::onTransferFailed(const QString &reason) {
     statusLabel->setText("❌  Failed: " + reason);
     trayIcon->showMessage("One Node", "Transfer failed — device may be offline",
                           QSystemTrayIcon::Warning, 3000);
+    progressBar->hide();
 
     if (reason.startsWith("Connection error:", Qt::CaseInsensitive)
         || reason.contains("refused", Qt::CaseInsensitive)
@@ -321,6 +337,12 @@ void MainWindow::setupUI() {
     linkedLabel->setStyleSheet("color: gray; font-size: 12px;");
     root->addWidget(linkedLabel);
 
+    progressBar = new QProgressBar(this);
+    progressBar->setRange(0, 100);
+    progressBar->setValue(0);
+    progressBar->hide();
+    root->addWidget(progressBar);
+
     // Drop zone
     QLabel *hint = new QLabel("🗂  Drop any file here to send it to your phone.", this);
     hint->setAlignment(Qt::AlignCenter);
@@ -391,6 +413,32 @@ void MainWindow::processIncomingTransfer(QTcpSocket *socket) {
     state.buffer.append(socket->readAll());
 
     while (true) {
+        if (state.tokenLength < 0) {
+            if (state.buffer.size() < 4) return;
+            state.tokenLength = readBigEndianInt32(state.buffer.left(4));
+            state.buffer.remove(0, 4);
+        }
+        if (state.token.isEmpty() && state.tokenLength > 0) {
+            if (state.buffer.size() < state.tokenLength) return;
+            state.token = QString::fromUtf8(state.buffer.left(state.tokenLength));
+            state.buffer.remove(0, state.tokenLength);
+            
+            if (state.token != settings->value("pairing_token").toString()) {
+                qWarning() << "Invalid pairing token received!";
+                cleanupIncomingTransfer(socket);
+                socket->disconnectFromHost();
+                return;
+            }
+        } else if (state.token.isEmpty() && state.tokenLength == 0) {
+            // No token provided?
+            if ("" != settings->value("pairing_token").toString()) {
+                qWarning() << "Missing pairing token!";
+                cleanupIncomingTransfer(socket);
+                socket->disconnectFromHost();
+                return;
+            }
+        }
+
         if (state.nameLength < 0) {
             if (state.buffer.size() < 4) return;
             state.nameLength = readBigEndianInt32(state.buffer.left(4));
@@ -430,6 +478,7 @@ void MainWindow::processIncomingTransfer(QTcpSocket *socket) {
             state.outputFile->close();
             trayIcon->showMessage("One Node", "Received " + state.fileName,
                                   QSystemTrayIcon::Information, 3000);
+            progressBar->hide();
             cleanupIncomingTransfer(socket);
             socket->disconnectFromHost();
             return;
@@ -441,12 +490,17 @@ void MainWindow::processIncomingTransfer(QTcpSocket *socket) {
         state.outputFile->write(state.buffer.constData(), toWrite);
         state.buffer.remove(0, static_cast<int>(toWrite));
         state.received += toWrite;
+        
+        int percent = (int)((state.received * 100) / state.fileSize);
+        progressBar->setValue(percent);
+        progressBar->show();
 
         if (state.received >= state.fileSize) {
             state.outputFile->flush();
             state.outputFile->close();
             trayIcon->showMessage("One Node", "Received " + state.fileName,
                                   QSystemTrayIcon::Information, 3000);
+            progressBar->hide();
             cleanupIncomingTransfer(socket);
             socket->disconnectFromHost();
             return;

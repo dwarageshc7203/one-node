@@ -12,6 +12,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Button
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -36,6 +37,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnPair: Button
     private lateinit var btnUnlink: Button
     private lateinit var btnSendFile: Button
+    private lateinit var progressBar: ProgressBar
+
+    private val fileQueue = java.util.LinkedList<Uri>()
+    private var isSending = false
 
     private lateinit var nsdManager: NsdManager
     private val serviceType = "_onenode._tcp"
@@ -108,6 +113,7 @@ class MainActivity : AppCompatActivity() {
         btnPair = findViewById(R.id.btnPair)
         btnUnlink = findViewById(R.id.btnUnlink)
         btnSendFile = findViewById(R.id.btnSendFile)
+        progressBar = findViewById(R.id.progressBar)
 
         btnPair.setOnClickListener { attemptPairing() }
         btnUnlink.setOnClickListener { unlink() }
@@ -273,22 +279,36 @@ class MainActivity : AppCompatActivity() {
     }
 
     private val filePickerLauncher = registerForActivityResult(
-        ActivityResultContracts.GetContent()
-    ) { uri ->
-        uri?.let { sendFileToDeskop(it) }
+        ActivityResultContracts.GetMultipleContents()
+    ) { uris ->
+        if (uris.isNotEmpty()) {
+            fileQueue.addAll(uris)
+            processQueue()
+        }
     }
 
     private fun pickFile() {
         filePickerLauncher.launch("*/*")
     }
 
+    private fun processQueue() {
+        if (isSending || fileQueue.isEmpty()) return
+        isSending = true
+        val uri = fileQueue.poll()
+        if (uri != null) sendFileToDeskop(uri)
+    }
+
     private fun sendFileToDeskop(uri: Uri) {
         val desktopIp = prefs.getString("device_ip", null) ?: run {
             tvStatus.text = "Not linked"
+            isSending = false
             return
         }
+        val token = prefs.getString("pairing_token", "") ?: ""
 
         tvStatus.text = "Sending..."
+        progressBar.visibility = View.VISIBLE
+        progressBar.progress = 0
 
         lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) {
@@ -296,18 +316,25 @@ class MainActivity : AppCompatActivity() {
                     // Get filename
                     val fileName = getFileName(uri) ?: "shared_file"
 
-                    // Get file bytes
-                    val inputStream = contentResolver.openInputStream(uri)
-                        ?: throw Exception("Cannot open file")
-                    val fileBytes = inputStream.readBytes()
-                    inputStream.close()
+                    // Get file size
+                    val fileSize = getFileSize(uri)
 
                     val socket = java.net.Socket(desktopIp, 45680)
                     val output = socket.getOutputStream()
 
+                    val tokenBytes = token.toByteArray(Charsets.UTF_8)
+                    val tokenLen = tokenBytes.size
                     val nameBytes = fileName.toByteArray(Charsets.UTF_8)
                     val nameLen = nameBytes.size
-                    val fileSize = fileBytes.size.toLong()
+
+                    // Header: 4 bytes token length
+                    output.write(byteArrayOf(
+                        (tokenLen shr 24).toByte(),
+                        (tokenLen shr 16).toByte(),
+                        (tokenLen shr 8).toByte(),
+                        tokenLen.toByte()
+                    ))
+                    output.write(tokenBytes)
 
                     // Header: 4 bytes name length
                     output.write(byteArrayOf(
@@ -329,9 +356,31 @@ class MainActivity : AppCompatActivity() {
                         (fileSize shr 8).toByte(),
                         fileSize.toByte()
                     ))
-                    // File data
-                    output.write(fileBytes)
+                    // File data in chunks
+                    val inputStream = contentResolver.openInputStream(uri)
+                        ?: throw Exception("Cannot open file")
+                    
+                    val buffer = ByteArray(8192)
+                    var sent = 0L
+                    var lastPercent = 0
+                    
+                    while (true) {
+                        val read = inputStream.read(buffer)
+                        if (read == -1) break
+                        output.write(buffer, 0, read)
+                        sent += read
+                        
+                        val currentPercent = if (fileSize > 0) ((sent * 100) / fileSize).toInt() else 100
+                        if (currentPercent > lastPercent) {
+                            lastPercent = currentPercent
+                            withContext(Dispatchers.Main) {
+                                progressBar.progress = currentPercent
+                            }
+                        }
+                    }
+                    
                     output.flush()
+                    inputStream.close()
                     socket.close()
 
                     fileName
@@ -340,11 +389,28 @@ class MainActivity : AppCompatActivity() {
 
             result.onSuccess { fileName ->
                 tvStatus.text = "✅ Sent: $fileName"
+                isSending = false
+                progressBar.visibility = View.GONE
+                processQueue()
             }
             result.onFailure {
                 tvStatus.text = "❌ Failed: ${it.message}"
+                isSending = false
+                progressBar.visibility = View.GONE
+                processQueue()
             }
         }
+    }
+
+    private fun getFileSize(uri: Uri): Long {
+        var size = 0L
+        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            val sizeIndex = cursor.getColumnIndex(android.provider.OpenableColumns.SIZE)
+            if (cursor.moveToFirst() && sizeIndex >= 0) {
+                size = cursor.getLong(sizeIndex)
+            }
+        }
+        return size
     }
 
     private fun getFileName(uri: Uri): String? {

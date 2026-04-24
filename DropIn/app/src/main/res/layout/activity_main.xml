@@ -22,7 +22,16 @@
         android:text="Not linked"
         android:textSize="14sp"
         android:textColor="@color/design_default_color_secondary"
-        android:layout_marginBottom="32dp"/>
+        android:layout_marginBottom="16dp"/>
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:visibility="gone"
+        android:max="100"/>
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilCode"
