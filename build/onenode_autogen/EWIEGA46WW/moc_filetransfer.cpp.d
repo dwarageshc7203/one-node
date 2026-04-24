@@ -1,5 +1,5 @@
-/home/dwaragesh/Documents/Projects/One-Node/build/dropin_autogen/EWIEGA46WW/moc_pairingserver.cpp: /home/dwaragesh/Documents/Projects/One-Node/pairingserver.h \
-  /home/dwaragesh/Documents/Projects/One-Node/build/dropin_autogen/moc_predefs.h \
+/home/dwaragesh/Documents/Projects/One-Node/build/onenode_autogen/EWIEGA46WW/moc_filetransfer.cpp: /home/dwaragesh/Documents/Projects/One-Node/filetransfer.h \
+  /home/dwaragesh/Documents/Projects/One-Node/build/onenode_autogen/moc_predefs.h \
   /usr/include/alloca.h \
   /usr/include/asm-generic/errno-base.h \
   /usr/include/asm-generic/errno.h \
@@ -364,11 +364,9 @@
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qvariant.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qvarlengtharray.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qversiontagging.h \
-  /usr/include/x86_64-linux-gnu/qt6/QtNetwork/QTcpServer \
   /usr/include/x86_64-linux-gnu/qt6/QtNetwork/QTcpSocket \
   /usr/include/x86_64-linux-gnu/qt6/QtNetwork/qabstractsocket.h \
   /usr/include/x86_64-linux-gnu/qt6/QtNetwork/qhostaddress.h \
-  /usr/include/x86_64-linux-gnu/qt6/QtNetwork/qtcpserver.h \
   /usr/include/x86_64-linux-gnu/qt6/QtNetwork/qtcpsocket.h \
   /usr/include/x86_64-linux-gnu/qt6/QtNetwork/qtnetwork-config.h \
   /usr/include/x86_64-linux-gnu/qt6/QtNetwork/qtnetworkexports.h \

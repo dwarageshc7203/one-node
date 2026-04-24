@@ -1,13 +1,18 @@
 #pragma once
 #include <QMainWindow>
+#include <QHash>
 #include <QSystemTrayIcon>
 #include <QMenu>
 #include <QLabel>
 #include <QPushButton>
 #include <QTimer>
 #include <QSettings>
+#include <QTcpServer>
+#include <QTcpSocket>
 #include "pairingserver.h"
 #include "filetransfer.h"
+
+class QFile;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -27,14 +32,27 @@ private slots:
     void onTransferFailed(const QString &reason);
 
 private:
+    struct IncomingTransferState {
+        qint32 nameLength = -1;
+        QString fileName;
+        qint64 fileSize = -1;
+        qint64 received = 0;
+        QByteArray buffer;
+        QFile *outputFile = nullptr;
+    };
+
     void setupUI();
     void setupTray();
+    void setupDesktopReceiver();
     QString generateCode();
     void applyCode(const QString &code);
     void showLinkedState(const QString &deviceName);
+    void processIncomingTransfer(QTcpSocket *socket);
+    void cleanupIncomingTransfer(QTcpSocket *socket);
 
     QSystemTrayIcon *trayIcon;
     QMenu           *trayMenu;
+    QTcpServer      *desktopReceiverServer;
 
     QLabel      *codeLabel;
     QLabel      *statusLabel;
@@ -46,6 +64,7 @@ private:
     QTimer         *countdownTimer;
     PairingServer  *pairingServer;
     FileTransfer   *fileTransfer;
+    QHash<QTcpSocket *, IncomingTransferState> incomingTransfers;
     int             secondsLeft;
     QString         currentCode;
 };

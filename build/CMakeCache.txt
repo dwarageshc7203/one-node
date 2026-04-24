@@ -193,7 +193,7 @@ CMAKE_PROJECT_DESCRIPTION:STATIC=
 CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 
 //Value Computed by CMake
-CMAKE_PROJECT_NAME:STATIC=dropin
+CMAKE_PROJECT_NAME:STATIC=onenode
 
 //Path to a program.
 CMAKE_RANLIB:FILEPATH=/usr/bin/ranlib
@@ -358,13 +358,13 @@ XKB_INCLUDE_DIR:PATH=XKB_INCLUDE_DIR-NOTFOUND
 XKB_LIBRARY:FILEPATH=XKB_LIBRARY-NOTFOUND
 
 //Value Computed by CMake
-dropin_BINARY_DIR:STATIC=/home/dwaragesh/Documents/Projects/One-Node/build
+onenode_BINARY_DIR:STATIC=/home/dwaragesh/Documents/Projects/One-Node/build
 
 //Value Computed by CMake
-dropin_IS_TOP_LEVEL:STATIC=ON
+onenode_IS_TOP_LEVEL:STATIC=ON
 
 //Value Computed by CMake
-dropin_SOURCE_DIR:STATIC=/home/dwaragesh/Documents/Projects/One-Node
+onenode_SOURCE_DIR:STATIC=/home/dwaragesh/Documents/Projects/One-Node
 
 
 ########################

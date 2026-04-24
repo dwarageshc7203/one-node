@@ -9,6 +9,7 @@ class PairingServer : public QObject {
 
 public:
     explicit PairingServer(QObject *parent = nullptr);
+
     void start(const QString &code);
     void stop();
     int  port() const { return 45678; }
@@ -16,7 +17,7 @@ public:
 signals:
     void devicePaired(const QString &deviceName, const QString &token, const QString &deviceIp);
     void pairingFailed(const QString &reason);
-
+    
 private slots:
     void onNewConnection();
     void onDataReceived();

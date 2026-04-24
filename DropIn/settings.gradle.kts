@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "DropIn"
+rootProject.name = "One Node"
 include(":app")
  

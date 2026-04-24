@@ -3,10 +3,12 @@
 #include <QLocalSocket>
 #include "mainwindow.h"
 
-#define SOCKET_NAME "dropin-single-instance"
+#define SOCKET_NAME "onenode-single-instance"
 
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
+    app.setApplicationName("One Node");
+    app.setOrganizationName("One Node");
     // Debug — log all arguments
     for (int i = 0; i < argc; i++) {
         qDebug() << "arg" << i << ":" << argv[i];
