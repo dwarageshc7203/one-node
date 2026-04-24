@@ -3,12 +3,16 @@ project(onenode)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(AVAHI REQUIRED avahi-client)
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Network Gui)
 add_executable(onenode
     main.cpp
     mainwindow.cpp
+    mdnsadvertiser.cpp
     pairingserver.cpp
     filetransfer.cpp
     resources.qrc
 )
-target_link_libraries(onenode Qt6::Core Qt6::Widgets Qt6::Network Qt6::Gui)
+target_include_directories(onenode PRIVATE ${AVAHI_INCLUDE_DIRS})
+target_link_libraries(onenode Qt6::Core Qt6::Widgets Qt6::Network Qt6::Gui ${AVAHI_LIBRARIES})

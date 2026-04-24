@@ -9,10 +9,15 @@
 #include <QSettings>
 #include <QTcpServer>
 #include <QTcpSocket>
+#include <QDragEnterEvent>
+#include <QDropEvent>
+#include <QMimeData>
+#include <QUrl>
 #include "pairingserver.h"
 #include "filetransfer.h"
 
 class QFile;
+class MdnsAdvertiser;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -20,6 +25,10 @@ class MainWindow : public QMainWindow {
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     void sendFilePath(const QString &filePath);
+
+protected:
+    void dragEnterEvent(QDragEnterEvent *event) override;
+    void dropEvent(QDropEvent *event) override;
 
 private slots:
     void onTrayActivated(QSystemTrayIcon::ActivationReason reason);
@@ -64,6 +73,7 @@ private:
     QTimer         *countdownTimer;
     PairingServer  *pairingServer;
     FileTransfer   *fileTransfer;
+    MdnsAdvertiser *mdnsAdvertiser;
     QHash<QTcpSocket *, IncomingTransferState> incomingTransfers;
     int             secondsLeft;
     QString         currentCode;

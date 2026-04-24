@@ -73,6 +73,15 @@
         android:layout_height="wrap_content"
         android:text="Unlink"
         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-        android:visibility="gone"/>
+        android:visibility="gone"
+        android:layout_marginBottom="16dp"/>
+
+    <Button
+        android:id="@+id/btnSendFile"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Send file to desktop"
+        android:visibility="gone"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
 
 </LinearLayout>

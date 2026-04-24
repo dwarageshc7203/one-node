@@ -68,6 +68,14 @@ build CMakeFiles/onenode.dir/mainwindow.cpp.o: CXX_COMPILER__onenode_unscanned_ 
   OBJECT_DIR = CMakeFiles/onenode.dir
   OBJECT_FILE_DIR = CMakeFiles/onenode.dir
 
+build CMakeFiles/onenode.dir/mdnsadvertiser.cpp.o: CXX_COMPILER__onenode_unscanned_ /home/dwaragesh/Documents/Projects/One-Node/mdnsadvertiser.cpp || cmake_object_order_depends_target_onenode
+  DEFINES = -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB
+  DEP_FILE = CMakeFiles/onenode.dir/mdnsadvertiser.cpp.o.d
+  FLAGS = -std=gnu++17 -fPIC
+  INCLUDES = -I/home/dwaragesh/Documents/Projects/One-Node/build/onenode_autogen/include -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork
+  OBJECT_DIR = CMakeFiles/onenode.dir
+  OBJECT_FILE_DIR = CMakeFiles/onenode.dir
+
 build CMakeFiles/onenode.dir/pairingserver.cpp.o: CXX_COMPILER__onenode_unscanned_ /home/dwaragesh/Documents/Projects/One-Node/pairingserver.cpp || cmake_object_order_depends_target_onenode
   DEFINES = -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB
   DEP_FILE = CMakeFiles/onenode.dir/pairingserver.cpp.o.d
@@ -100,8 +108,8 @@ build CMakeFiles/onenode.dir/onenode_autogen/EWIEGA46WW/qrc_resources.cpp.o: CXX
 #############################################
 # Link the executable onenode
 
-build onenode: CXX_EXECUTABLE_LINKER__onenode_ CMakeFiles/onenode.dir/onenode_autogen/mocs_compilation.cpp.o CMakeFiles/onenode.dir/main.cpp.o CMakeFiles/onenode.dir/mainwindow.cpp.o CMakeFiles/onenode.dir/pairingserver.cpp.o CMakeFiles/onenode.dir/filetransfer.cpp.o CMakeFiles/onenode.dir/onenode_autogen/EWIEGA46WW/qrc_resources.cpp.o | /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.4.2 /usr/lib/x86_64-linux-gnu/libQt6Network.so.6.4.2 /usr/lib/x86_64-linux-gnu/libQt6Gui.so.6.4.2 /usr/lib/x86_64-linux-gnu/libGLX.so /usr/lib/x86_64-linux-gnu/libOpenGL.so /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2 || onenode_autogen onenode_autogen_timestamp_deps
-  LINK_LIBRARIES = /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.4.2  /usr/lib/x86_64-linux-gnu/libQt6Network.so.6.4.2  /usr/lib/x86_64-linux-gnu/libQt6Gui.so.6.4.2  /usr/lib/x86_64-linux-gnu/libGLX.so  /usr/lib/x86_64-linux-gnu/libOpenGL.so  /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2
+build onenode: CXX_EXECUTABLE_LINKER__onenode_ CMakeFiles/onenode.dir/onenode_autogen/mocs_compilation.cpp.o CMakeFiles/onenode.dir/main.cpp.o CMakeFiles/onenode.dir/mainwindow.cpp.o CMakeFiles/onenode.dir/mdnsadvertiser.cpp.o CMakeFiles/onenode.dir/pairingserver.cpp.o CMakeFiles/onenode.dir/filetransfer.cpp.o CMakeFiles/onenode.dir/onenode_autogen/EWIEGA46WW/qrc_resources.cpp.o | /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.4.2 /usr/lib/x86_64-linux-gnu/libQt6Network.so.6.4.2 /usr/lib/x86_64-linux-gnu/libQt6Gui.so.6.4.2 /usr/lib/x86_64-linux-gnu/libGLX.so /usr/lib/x86_64-linux-gnu/libOpenGL.so /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2 || onenode_autogen onenode_autogen_timestamp_deps
+  LINK_LIBRARIES = /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.4.2  /usr/lib/x86_64-linux-gnu/libQt6Network.so.6.4.2  /usr/lib/x86_64-linux-gnu/libQt6Gui.so.6.4.2  -lavahi-common  -lavahi-client  /usr/lib/x86_64-linux-gnu/libGLX.so  /usr/lib/x86_64-linux-gnu/libOpenGL.so  /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2
   OBJECT_DIR = CMakeFiles/onenode.dir
   POST_BUILD = :
   PRE_LINK = :
@@ -166,7 +174,7 @@ build onenode_autogen/EWIEGA46WW/qrc_resources.cpp | ${cmake_ninja_workdir}oneno
 #############################################
 # Phony custom command for CMakeFiles/onenode_autogen_timestamp_deps
 
-build CMakeFiles/onenode_autogen_timestamp_deps | ${cmake_ninja_workdir}CMakeFiles/onenode_autogen_timestamp_deps: phony /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.4.2 /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2 /usr/lib/x86_64-linux-gnu/libQt6Network.so.6.4.2 /usr/lib/qt6/libexec/moc /usr/lib/x86_64-linux-gnu/libQt6Gui.so.6.4.2
+build CMakeFiles/onenode_autogen_timestamp_deps | ${cmake_ninja_workdir}CMakeFiles/onenode_autogen_timestamp_deps: phony /usr/lib/qt6/libexec/moc /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2 /usr/lib/x86_64-linux-gnu/libQt6Network.so.6.4.2 /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.4.2 /usr/lib/x86_64-linux-gnu/libQt6Gui.so.6.4.2
 
 
 #############################################

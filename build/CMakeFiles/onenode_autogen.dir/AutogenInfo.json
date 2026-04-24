@@ -32,6 +32,9 @@
 		"/usr/share/cmake-3.28/Modules/Platform/Linux-GNU-CXX.cmake",
 		"/usr/share/cmake-3.28/Modules/Platform/Linux-GNU.cmake",
 		"/usr/share/cmake-3.28/Modules/CMakeCommonLanguageInclude.cmake",
+		"/usr/share/cmake-3.28/Modules/FindPkgConfig.cmake",
+		"/usr/share/cmake-3.28/Modules/FindPackageHandleStandardArgs.cmake",
+		"/usr/share/cmake-3.28/Modules/FindPackageMessage.cmake",
 		"/usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6ConfigVersion.cmake",
 		"/usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6ConfigVersionImpl.cmake",
 		"/usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6Config.cmake",
@@ -205,6 +208,12 @@
 			null
 		],
 		[
+			"/home/dwaragesh/Documents/Projects/One-Node/mdnsadvertiser.h",
+			"Mu",
+			"EWIEGA46WW/moc_mdnsadvertiser.cpp",
+			null
+		],
+		[
 			"/home/dwaragesh/Documents/Projects/One-Node/pairingserver.h",
 			"Mu",
 			"EWIEGA46WW/moc_pairingserver.cpp",
@@ -285,6 +294,11 @@
 		[ "/home/dwaragesh/Documents/Projects/One-Node/main.cpp", "Mu", null ],
 		[
 			"/home/dwaragesh/Documents/Projects/One-Node/mainwindow.cpp",
+			"Mu",
+			null
+		],
+		[
+			"/home/dwaragesh/Documents/Projects/One-Node/mdnsadvertiser.cpp",
 			"Mu",
 			null
 		],

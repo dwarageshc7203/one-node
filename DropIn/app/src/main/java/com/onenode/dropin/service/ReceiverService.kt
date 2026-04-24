@@ -21,8 +21,10 @@ class ReceiverService : Service() {
     private val job = SupervisorJob()
     private val scope = CoroutineScope(Dispatchers.IO + job)
     private var serverSocket: ServerSocket? = null
+    private var pingSocket: ServerSocket? = null
     private val CHANNEL_ID = "one_node_channel"
     private val PORT = 45679
+    private val PING_PORT = 45681
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -31,6 +33,7 @@ class ReceiverService : Service() {
         createNotificationChannel()
         startForeground(1, buildNotification("One Node — ready to receive files"))
         startListening()
+        startPingServer()
     }
 
     private fun startListening() {
@@ -40,6 +43,35 @@ class ReceiverService : Service() {
                 while (true) {
                     val client = serverSocket!!.accept()
                     launch { handleIncomingFile(client) }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    private fun startPingServer() {
+        scope.launch {
+            try {
+                pingSocket = ServerSocket(PING_PORT)
+                while (true) {
+                    val client = pingSocket!!.accept()
+                    launch {
+                        try {
+                            val reader = client.getInputStream().bufferedReader()
+                            val writer = client.getOutputStream().bufferedWriter()
+                            val msg = reader.readLine()
+                            if (msg == "ping") {
+                                writer.write("pong")
+                                writer.newLine()
+                                writer.flush()
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        } finally {
+                            client.close()
+                        }
+                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -123,5 +155,6 @@ class ReceiverService : Service() {
         super.onDestroy()
         job.cancel()
         serverSocket?.close()
+        pingSocket?.close()
     }
 }

@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include "mdnsadvertiser.h"
 #include <QApplication>
 #include <QIcon>
 #include <QPixmap>
@@ -11,6 +12,10 @@
 #include <QStandardPaths>
 #include <QDir>
 #include <QFile>
+#include <QMimeData>
+#include <QHostAddress>
+#include <QUrl>
+#include <QDebug>
 
 namespace {
 qint32 readBigEndianInt32(const QByteArray &bytes)
@@ -20,7 +25,6 @@ qint32 readBigEndianInt32(const QByteArray &bytes)
          | (static_cast<quint8>(bytes[2]) << 8)
          | static_cast<quint8>(bytes[3]);
 }
-
 qint64 readBigEndianInt64(const QByteArray &bytes)
 {
     qint64 value = 0;
@@ -36,6 +40,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     countdownTimer = new QTimer(this);
     pairingServer  = new PairingServer(this);
     fileTransfer   = new FileTransfer(this);
+    mdnsAdvertiser = new MdnsAdvertiser(this);
     desktopReceiverServer = nullptr;
 
     connect(countdownTimer, &QTimer::timeout,
@@ -52,14 +57,45 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     setupUI();
     setupTray();
     setupDesktopReceiver();
+    mdnsAdvertiser->start();
+    setAcceptDrops(true);
 
-    QString savedDevice = settings->value("device_name").toString();
-    if (!savedDevice.isEmpty()) {
-        showLinkedState(savedDevice);
-    } else {
-        onRegenerateClicked();
+    // Always fresh code on every launch
+    onRegenerateClicked();
+}
+
+// ── Drag and drop ──────────────────────────────────────────────────────────
+
+void MainWindow::dragEnterEvent(QDragEnterEvent *event) {
+    qDebug() << "dragEnterEvent triggered";
+    if (event->mimeData()->hasUrls()) {
+        event->acceptProposedAction();
+        qDebug() << "Drag accepted";
     }
 }
+
+void MainWindow::dropEvent(QDropEvent *event) {
+    qDebug() << "dropEvent triggered";
+
+    QString peerIp = settings->value("device_ip").toString();
+    QString deviceName = settings->value("device_name").toString();
+
+    if (peerIp.isEmpty() || deviceName.isEmpty()) {
+        statusLabel->setText("⚠️  No device linked — pair first");
+        return;
+    }
+
+    const auto urls = event->mimeData()->urls();
+    for (const QUrl &url : urls) {
+        QString filePath = url.toLocalFile();
+        if (!filePath.isEmpty()) {
+            statusLabel->setText("📤  Sending " + QFileInfo(filePath).fileName());
+            fileTransfer->sendFile(filePath, peerIp, 45679);
+        }
+    }
+}
+
+// ── File sending ───────────────────────────────────────────────────────────
 
 void MainWindow::sendFilePath(const QString &filePath) {
     QString peerIp = settings->value("device_ip").toString();
@@ -71,8 +107,10 @@ void MainWindow::sendFilePath(const QString &filePath) {
     trayIcon->showMessage("One Node",
         "Sending: " + QFileInfo(filePath).fileName(),
         QSystemTrayIcon::Information, 2000);
-    fileTransfer->sendFile(filePath, peerIp);
+    fileTransfer->sendFile(filePath, peerIp, 45679);
 }
+
+// ── Pairing ────────────────────────────────────────────────────────────────
 
 QString MainWindow::generateCode() {
     int n = QRandomGenerator::global()->bounded(100000, 999999);
@@ -105,16 +143,16 @@ void MainWindow::onTickTimer() {
 }
 
 void MainWindow::onRegenerateClicked() {
+    linkedLabel->clear();
+    trayIcon->setToolTip("One Node — not linked");
     applyCode(generateCode());
 }
 
 void MainWindow::onDevicePaired(const QString &deviceName, const QString &token, const QString &deviceIp) {
     countdownTimer->stop();
-
     QString cleanIp = deviceIp;
     if (cleanIp.startsWith("::ffff:"))
         cleanIp = cleanIp.mid(7);
-
     settings->setValue("device_name", deviceName);
     settings->setValue("pairing_token", token);
     settings->setValue("device_ip", cleanIp);
@@ -141,6 +179,8 @@ void MainWindow::showLinkedState(const QString &deviceName) {
         settings->remove("device_ip");
         settings->sync();
         regenerateBtn->setText("Regenerate");
+        linkedLabel->clear();
+        trayIcon->setToolTip("One Node — not linked");
         disconnect(regenerateBtn, nullptr, this, nullptr);
         connect(regenerateBtn, &QPushButton::clicked,
                 this, &MainWindow::onRegenerateClicked);
@@ -149,14 +189,42 @@ void MainWindow::showLinkedState(const QString &deviceName) {
 }
 
 void MainWindow::onTransferDone(const QString &fileName) {
+    statusLabel->setText("✅  Sent: " + fileName);
     trayIcon->showMessage("One Node", "Sent: " + fileName,
                           QSystemTrayIcon::Information, 3000);
 }
 
 void MainWindow::onTransferFailed(const QString &reason) {
-    trayIcon->showMessage("One Node", "Failed: " + reason,
+    statusLabel->setText("❌  Failed: " + reason);
+    trayIcon->showMessage("One Node", "Transfer failed — device may be offline",
                           QSystemTrayIcon::Warning, 3000);
+
+    if (reason.contains("Connection", Qt::CaseInsensitive)
+        || reason.contains("refused", Qt::CaseInsensitive)
+        || reason.contains("timed out", Qt::CaseInsensitive)
+        || reason.contains("error", Qt::CaseInsensitive)) {
+        settings->remove("device_name");
+        settings->remove("pairing_token");
+        settings->remove("device_ip");
+        settings->sync();
+
+        QTimer::singleShot(2000, this, [this]() {
+            codeLabel->setText("--- ---");
+            timerLabel->setText("");
+            linkedLabel->setText("");
+            regenerateBtn->setText("Regenerate");
+            trayIcon->setToolTip("One Node — not linked");
+
+            disconnect(regenerateBtn, &QPushButton::clicked, nullptr, nullptr);
+            connect(regenerateBtn, &QPushButton::clicked,
+                    this, &MainWindow::onRegenerateClicked);
+
+            onRegenerateClicked();
+        });
+    }
 }
+
+// ── UI Setup ───────────────────────────────────────────────────────────────
 
 void MainWindow::setupUI() {
     setWindowTitle("One Node — Link device");
@@ -242,157 +310,21 @@ void MainWindow::setupUI() {
     linkedLabel->setStyleSheet("color: gray; font-size: 12px;");
     root->addWidget(linkedLabel);
 
-    QLabel *hint = new QLabel(
-        "Drag any file onto the One Node dock icon to send it to your phone.", this);
+    // Drop zone
+    QLabel *hint = new QLabel("🗂  Drop any file here to send it to your phone.", this);
     hint->setAlignment(Qt::AlignCenter);
     hint->setStyleSheet(
         "background: #EEEDFE; border-radius: 8px;"
-        "padding: 12px; color: #534AB7; font-size: 12px;"
+        "padding: 16px; color: #534AB7; font-size: 13px;"
+        "border: 2px dashed #AFA9EC;"
     );
     hint->setWordWrap(true);
+    hint->setMinimumHeight(60);
     root->addWidget(hint);
     root->addStretch();
 }
 
-void MainWindow::setupDesktopReceiver() {
-    desktopReceiverServer = new QTcpServer(this);
-    connect(desktopReceiverServer, &QTcpServer::newConnection, this, [this]() {
-        while (desktopReceiverServer->hasPendingConnections()) {
-            QTcpSocket *socket = desktopReceiverServer->nextPendingConnection();
-            incomingTransfers.insert(socket, IncomingTransferState{});
-
-            connect(socket, &QTcpSocket::readyRead, this, [this, socket]() {
-                processIncomingTransfer(socket);
-            });
-            connect(socket, &QTcpSocket::disconnected, this, [this, socket]() {
-                cleanupIncomingTransfer(socket);
-            });
-        }
-    });
-
-    if (!desktopReceiverServer->listen(QHostAddress::Any, 45680)) {
-        qWarning() << "Failed to start incoming file server:" << desktopReceiverServer->errorString();
-        trayIcon->showMessage("One Node",
-                              "Incoming file server could not start",
-                              QSystemTrayIcon::Warning,
-                              3000);
-    }
-}
-
-void MainWindow::processIncomingTransfer(QTcpSocket *socket) {
-    auto it = incomingTransfers.find(socket);
-    if (it == incomingTransfers.end()) {
-        return;
-    }
-
-    IncomingTransferState &state = it.value();
-    state.buffer.append(socket->readAll());
-
-    while (true) {
-        if (state.nameLength < 0) {
-            if (state.buffer.size() < 4) {
-                return;
-            }
-            state.nameLength = readBigEndianInt32(state.buffer.left(4));
-            state.buffer.remove(0, 4);
-        }
-
-        if (state.fileName.isEmpty()) {
-            if (state.buffer.size() < state.nameLength) {
-                return;
-            }
-            state.fileName = QString::fromUtf8(state.buffer.left(state.nameLength));
-            state.fileName = QFileInfo(state.fileName).fileName();
-            state.buffer.remove(0, state.nameLength);
-        }
-
-        if (state.fileSize < 0) {
-            if (state.buffer.size() < 8) {
-                return;
-            }
-            state.fileSize = readBigEndianInt64(state.buffer.left(8));
-            state.buffer.remove(0, 8);
-
-            QString downloadsPath = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
-            if (downloadsPath.isEmpty()) {
-                downloadsPath = QDir::homePath();
-            }
-
-            QDir targetDir(downloadsPath + "/OneNode");
-            targetDir.mkpath(".");
-
-            QString safeName = state.fileName.isEmpty() ? QStringLiteral("shared_media.bin") : state.fileName;
-            QString targetPath = targetDir.filePath(safeName);
-            state.outputFile = new QFile(targetPath, socket);
-            if (!state.outputFile->open(QIODevice::WriteOnly)) {
-                trayIcon->showMessage("One Node",
-                                      "Could not save incoming file",
-                                      QSystemTrayIcon::Warning,
-                                      3000);
-                cleanupIncomingTransfer(socket);
-                socket->disconnectFromHost();
-                return;
-            }
-            trayIcon->showMessage("One Node",
-                                  "Receiving " + safeName,
-                                  QSystemTrayIcon::Information,
-                                  2000);
-        }
-
-        if (!state.outputFile) {
-            return;
-        }
-
-        qint64 remaining = state.fileSize - state.received;
-        if (remaining <= 0) {
-            state.outputFile->close();
-            trayIcon->showMessage("One Node",
-                                  "Received " + state.fileName,
-                                  QSystemTrayIcon::Information,
-                                  3000);
-            cleanupIncomingTransfer(socket);
-            socket->disconnectFromHost();
-            return;
-        }
-
-        qint64 toWrite = qMin<qint64>(remaining, state.buffer.size());
-        if (toWrite == 0) {
-            return;
-        }
-
-        state.outputFile->write(state.buffer.constData(), toWrite);
-        state.buffer.remove(0, static_cast<int>(toWrite));
-        state.received += toWrite;
-
-        if (state.received >= state.fileSize) {
-            state.outputFile->flush();
-            state.outputFile->close();
-            trayIcon->showMessage("One Node",
-                                  "Received " + state.fileName,
-                                  QSystemTrayIcon::Information,
-                                  3000);
-            cleanupIncomingTransfer(socket);
-            socket->disconnectFromHost();
-            return;
-        }
-    }
-}
-
-void MainWindow::cleanupIncomingTransfer(QTcpSocket *socket) {
-    auto it = incomingTransfers.find(socket);
-    if (it == incomingTransfers.end()) {
-        return;
-    }
-
-    if (it.value().outputFile) {
-        it.value().outputFile->close();
-        it.value().outputFile->deleteLater();
-        it.value().outputFile = nullptr;
-    }
-
-    incomingTransfers.erase(it);
-    socket->deleteLater();
-}
+// ── Tray ───────────────────────────────────────────────────────────────────
 
 void MainWindow::setupTray() {
     trayMenu = new QMenu(this);
@@ -417,4 +349,108 @@ void MainWindow::onTrayActivated(QSystemTrayIcon::ActivationReason reason) {
 
 void MainWindow::onQuitClicked() {
     QApplication::quit();
+}
+
+// ── Desktop receiver (phone → desktop) ────────────────────────────────────
+
+void MainWindow::setupDesktopReceiver() {
+    desktopReceiverServer = new QTcpServer(this);
+    connect(desktopReceiverServer, &QTcpServer::newConnection, this, [this]() {
+        while (desktopReceiverServer->hasPendingConnections()) {
+            QTcpSocket *socket = desktopReceiverServer->nextPendingConnection();
+            incomingTransfers.insert(socket, IncomingTransferState{});
+            connect(socket, &QTcpSocket::readyRead, this, [this, socket]() {
+                processIncomingTransfer(socket);
+            });
+            connect(socket, &QTcpSocket::disconnected, this, [this, socket]() {
+                cleanupIncomingTransfer(socket);
+            });
+        }
+    });
+    if (!desktopReceiverServer->listen(QHostAddress::Any, 45680)) {
+        qWarning() << "Failed to start incoming file server:" << desktopReceiverServer->errorString();
+    }
+}
+
+void MainWindow::processIncomingTransfer(QTcpSocket *socket) {
+    auto it = incomingTransfers.find(socket);
+    if (it == incomingTransfers.end()) return;
+
+    IncomingTransferState &state = it.value();
+    state.buffer.append(socket->readAll());
+
+    while (true) {
+        if (state.nameLength < 0) {
+            if (state.buffer.size() < 4) return;
+            state.nameLength = readBigEndianInt32(state.buffer.left(4));
+            state.buffer.remove(0, 4);
+        }
+        if (state.fileName.isEmpty()) {
+            if (state.buffer.size() < state.nameLength) return;
+            state.fileName = QString::fromUtf8(state.buffer.left(state.nameLength));
+            state.fileName = QFileInfo(state.fileName).fileName();
+            state.buffer.remove(0, state.nameLength);
+        }
+        if (state.fileSize < 0) {
+            if (state.buffer.size() < 8) return;
+            state.fileSize = readBigEndianInt64(state.buffer.left(8));
+            state.buffer.remove(0, 8);
+
+            QString downloadsPath = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
+            if (downloadsPath.isEmpty()) downloadsPath = QDir::homePath();
+
+            QDir targetDir(downloadsPath + "/OneNode");
+            targetDir.mkpath(".");
+
+            QString safeName = state.fileName.isEmpty() ? "shared_file.bin" : state.fileName;
+            state.outputFile = new QFile(targetDir.filePath(safeName), socket);
+            if (!state.outputFile->open(QIODevice::WriteOnly)) {
+                cleanupIncomingTransfer(socket);
+                socket->disconnectFromHost();
+                return;
+            }
+            trayIcon->showMessage("One Node", "Receiving " + safeName,
+                                  QSystemTrayIcon::Information, 2000);
+        }
+        if (!state.outputFile) return;
+
+        qint64 remaining = state.fileSize - state.received;
+        if (remaining <= 0) {
+            state.outputFile->close();
+            trayIcon->showMessage("One Node", "Received " + state.fileName,
+                                  QSystemTrayIcon::Information, 3000);
+            cleanupIncomingTransfer(socket);
+            socket->disconnectFromHost();
+            return;
+        }
+
+        qint64 toWrite = qMin<qint64>(remaining, state.buffer.size());
+        if (toWrite == 0) return;
+
+        state.outputFile->write(state.buffer.constData(), toWrite);
+        state.buffer.remove(0, static_cast<int>(toWrite));
+        state.received += toWrite;
+
+        if (state.received >= state.fileSize) {
+            state.outputFile->flush();
+            state.outputFile->close();
+            trayIcon->showMessage("One Node", "Received " + state.fileName,
+                                  QSystemTrayIcon::Information, 3000);
+            cleanupIncomingTransfer(socket);
+            socket->disconnectFromHost();
+            return;
+        }
+    }
+}
+
+void MainWindow::cleanupIncomingTransfer(QTcpSocket *socket) {
+    auto it = incomingTransfers.find(socket);
+    if (it == incomingTransfers.end()) return;
+    if (it.value().outputFile) {
+        it.value().outputFile->close();
+        it.value().outputFile->deleteLater();
+        it.value().outputFile = nullptr;
+    }
+    incomingTransfers.erase(it);
+    socket->deleteLater();
 }
